@@ -21,6 +21,7 @@ export default {
   data() {
       return {
           // map: null,
+          // these values are overridden
           endYear: 0,
           startYear: 3000,
           currentYear: 2000
@@ -31,7 +32,7 @@ export default {
       let min = 0
       let m
       data.features.forEach(point => {
-        console.log("point.geometry is", point.geometry)
+        // console.log("point.geometry is", point.geometry)
         // if (!"ObsDate" in point.properties){
         if (!point.properties.ObsDate){
           // console.log("no observation date :(");
@@ -52,41 +53,77 @@ export default {
     updateMap(){
       let self = this
       // See data in a range of 60 years
-      let backTime = 60
+      let backTime = 30
+      // Heatmap changes for 200 years
+      let heatMapBacktTime = 200
       // Filter out points in the future
       this.map.setFilter('point', ['<', 'Time', self.currentYear]);
       this.map.setFilter('heatmap', ['<', 'Time', self.currentYear]);
-      this.map.setPaintProperty("point", "circle-opacity",
-      [
-          "interpolate",
-          ["linear"],
-          ["get", "Time"],
-          self.currentYear-backTime,
-          0,
-          self.currentYear,
-          .2
-      ]
-    )
-      this.map.setPaintProperty("point",
-              "circle-radius",
-              [
-
-                      "*",
-                      [
-                          "-",
-                          ["get", "Time"],
-                          self.currentYear - backTime,
-                      ],
-                      .1
-                      // 0
-                ]
-              )
+      // this.map.setPaintProperty("point", "circle-opacity",
+      // [
+      //     "interpolate",
+      //     ["linear"],
+      //     ["get", "Time"],
+      //     self.currentYear-backTime,
+      //     0,
+      //     self.currentYear,
+      //     .2
+      // ]
+    // )
+    this.map.setPaintProperty("point", "circle-color",
+    [
+        "interpolate",
+        ["linear"],
+        ["get", "Time"],
+        self.currentYear-backTime,
+        "#05f",
+        self.currentYear,
+        "#f20"
+    ]
+  )
+      // this.map.setPaintProperty("point",
+      //         "circle-radius",
+      //         [
+      //
+      //                 "*",
+      //                 [
+      //                     "-",
+      //                     ["get", "Time"],
+      //                     self.currentYear - backTime,
+      //                 ],
+      //                 .1
+      //                 // 0
+      //           ]
+      //         )
       this.map.setPaintProperty("heatmap",
       "heatmap-weight",
+      // more recent is bigger, size = date - cutoff past date
+      // [
+      //     "-",
+      //     ["get", "Time"],
+      //     (self.currentYear - heatmapBackTime)
+      // ]
+      // older is bigger, size = now - date
+      // [
+      //     "-",
+      //     (self.currentYear)
+      //     ["get", "Time"]
+      // ]
       [
-          "-",
+          "interpolate",
+          // ["exponential", 2],
+          // ["cubic-bezier", 0.5, 0.0, 1, 0.5]
+          // ["cubic-bezier", 0, 0, 1, 1]
+          // ["cubic-bezier", 0, 1, 0, 1]
+          // [ "cubic-bezier",
+          //   0, .5,
+          //   0, .5 ],
+          ["linear"],
           ["get", "Time"],
-          (self.currentYear - backTime)
+          self.currentYear - 200,
+          1000,
+          self.currentYear,
+          0
       ]
     )
     }
@@ -97,7 +134,7 @@ export default {
       "pk.eyJ1Ijoic25haWxib25lcyIsImEiOiJjamJvdGlueG41bzB5MzRxZnlsbTM4OGNpIn0.g4DLrr29EfW3otLvTfzt9Q";
     this.map = new mapboxgl.Map({
       container: "map",
-      style: "mapbox://styles/mapbox/light-v9",
+      style: "mapbox://styles/mapbox/outdoors-v9",
       center: [-106.629181, 35.106766],
       zoom: 4,
       interactive: true
@@ -115,7 +152,7 @@ export default {
             id: "heatmap",
             type: "heatmap",
             source: "pointData",
-            maxzoom: 13,
+            maxzoom: 8,
             paint: {
               "heatmap-intensity": [
                 "interpolate",
@@ -127,7 +164,8 @@ export default {
                 .03
               ],
               "heatmap-color": ["interpolate",["linear"],["heatmap-density"],
-              0,"rgba(0, 0, 0, .0)",0.1,"rgba(255, 233, 53, 0.4)",0.3,"#feb24c",0.5,"#fd8d3c",0.7,"#fc4e2a",1,"#e31a1c"],
+              0,"rgba(0, 0, 0, .0)",0.1,"#ee7766",0.3,"#ee6655",0.5,"#ee553f",0.7,"#ee3333",1,"#ee0011"],
+              // 0,"rgba(0, 0, 0, .0)",0.1,"#ee7766",1,"#ee3333"],
 
               // Adjust the heatmap radius by zoom level
               "heatmap-radius": [
@@ -144,9 +182,9 @@ export default {
                 "interpolate",
                 ["linear"],
                 ["zoom"],
-                6,
+                5,
                 0.5,
-                13,
+                8,
                 0
               ]
             }
@@ -177,17 +215,18 @@ export default {
                 8,
                 1.0
               ],
-              "circle-stroke-color": "rgba(255,255,255,.75)",
-              "circle-stroke-width": 1,
-              "circle-stroke-opacity": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                12,
-                0,
-                20,
-                1
-              ]
+              "circle-radius": 2
+              // "circle-stroke-color": "rgba(255,255,255,.75)",
+              // "circle-stroke-width": 1,
+              // "circle-stroke-opacity": [
+              //   "interpolate",
+              //   ["linear"],
+              //   ["zoom"],
+              //   12,
+              //   0,
+              //   20,
+              //   1
+              // ]
             }
           }
 
@@ -223,6 +262,7 @@ export default {
     width: 100%;
 }
 #menu {
+  text-align: center;
   background: #fff;
   position: absolute;
   z-index: 1;
@@ -265,7 +305,7 @@ export default {
 }
 
 .range-slider {
-  margin: 60px 0 0 0%;
+  margin: 6px;
 }
 
 
